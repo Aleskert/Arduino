@@ -1,0 +1,75 @@
+<html>
+
+<head>
+  <meta http-equiv='content-type' content='text/html; charset=UTF-8'>
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+  <title>МріяПлюс КОНТРОЛЬ</title>
+  <link type="text/css" rel="StyleSheet" href="/my.css" />
+ <script>
+function GetFlameState() {
+nocache = "&nocache=" + Math.random() * 1000000;
+var request = new XMLHttpRequest();
+request.onreadystatechange = function() {
+if (this.readyState == 4) {
+if (this.status == 200) {
+if (this.responseText != null) {
+var arrayOfStrings = this.responseText.split(":");
+
+document.getElementById("pool_txt").innerHTML = arrayOfStrings[0];
+document.getElementById("temp_txt").innerHTML = arrayOfStrings[1];
+document.getElementById("humid_txt").innerHTML = arrayOfStrings[2];
+for(var i = 1 ; i < 5 ; i++)
+if(arrayOfStrings[2+i] == "1")
+document.getElementById("led_"+i).setAttribute("class","button_enabled");
+else
+document.getElementById("led_"+i).setAttribute("class","button_disabled");
+}
+}
+}
+}
+request.open("GET", "ajax_flame" + nocache, true);
+request.send(null);
+setTimeout('GetFlameState()', 1000);
+}
+function onClick(pin){
+var request = new XMLHttpRequest();
+request.open("GET", "\setpin?pin=" + pin, false);
+request.send(null);
+}
+</script>
+
+</head>
+
+<body onload="GetFlameState()">
+  <div class="form">
+    <h2>МріяПлюс КОНТРОЛЬ</h2>
+    <hr noshade size="1px" color="white">
+    <table align="center">
+      <tr>
+        <td><img src='/drop.png'/></td>
+        <td valign="center">Затоплення</td>
+        <td><span id="pool_txt"> 0</span></td>
+      </tr>
+
+      <tr>
+        <td><img src='/temp.png'/></td>
+        <td valign="center">Температура</td>
+        <td><span id="temp_txt">0</span> °C</td>
+      </tr>
+
+      <tr>
+        <td><img src='/vent.png'/></td>
+        <td valign="center">Вологість</td>
+        <td><span id="humid_txt">0</span> %</td>
+      </tr>
+    </table>
+    <br>
+    <center>
+      <button type="button" id="led_1" class="button_disabled" onClick="onClick(1)">Кран</button>
+      <button type="button" id="led_2" class="button_disabled" onClick="onClick(2)">Вентилятор</button>
+      <button type="button" id="led_3" class="button_disabled" onClick="onClick(3)">Реле №3</button>
+      <button type="button" id="led_4" class="button_disabled" onClick="onClick(4)">Реле №4</button>
+    </center>
+</div>
+    </Body>
+</html>
