@@ -34,9 +34,10 @@ void setup() {
 }
 
 void loop() {
-												// listen for incoming clients
-	int pool_pin = 0; 							//пін, на якому підключено датчик вологості
-	int sensorReading = analogRead(pool_pin);	//читємо інфу з піну затоплення
+	int pool_pin1 = 0; 							//пін першого датчика затоплення
+	int pool_pin2 = 0;							//пін другого датчика затоплення
+	int pool1 = analogRead(pool_pin1);			//читємо інфу з першого піну затоплення
+	int pool2 = analogRead(pool_pin2);			//читємо інфу з другого піну затоплення
 	int temp = dht.readTemperature();			//читаємо температуру з DHT22
 	int humidity = dht.readHumidity();			//читаємо вологість з DHT22
 			
@@ -95,8 +96,10 @@ void loop() {
             client.println("Connection: keep-alive");
             client.println();
             
-            client.print(sensorReading);
+            client.print(pool1);
             client.print(":");
+			client.print(pool2);
+			client.print(":");
             client.print(temp);
             client.print(":");
             client.print(humidity);
@@ -139,9 +142,9 @@ void loop() {
             client.println();
           }
 
-		if (sensorReading > 600) {						//умова спрацювання реле1 при затопленні. Значення 600 від фонаря
+		if (pool1 > 700) or (pool2 > 700) {						//умова спрацювання реле1 при затопленні. Значення 700 від фонаря. 0 - 300 : сухо, 300 - 700 : влажно, 700 - 950 : в воде
 			pin1 = 1;
-			digitalWrite(2, pin1);;
+			digitalWrite(2, pin1);
 		} else {
 			pin1 = 0;
 			digitalWrite(2, pin1);

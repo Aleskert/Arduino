@@ -15,11 +15,12 @@ if (this.status == 200) {
 if (this.responseText != null) {
 var arrayOfStrings = this.responseText.split(":");
 
-document.getElementById("pool_txt").innerHTML = arrayOfStrings[0];
-document.getElementById("temp_txt").innerHTML = arrayOfStrings[1];
-document.getElementById("humid_txt").innerHTML = arrayOfStrings[2];
+document.getElementById("pool1_txt").innerHTML = arrayOfStrings[0];
+document.getElementById("pool2_txt").innerHTML = arrayOfStrings[1];
+document.getElementById("temp_txt").innerHTML = arrayOfStrings[2];
+document.getElementById("humid_txt").innerHTML = arrayOfStrings[3];
 for(var i = 1 ; i < 5 ; i++)
-if(arrayOfStrings[2+i] == "1")
+if(arrayOfStrings[3+i] == "1")
 document.getElementById("led_"+i).setAttribute("class","button_enabled");
 else
 document.getElementById("led_"+i).setAttribute("class","button_disabled");
@@ -47,8 +48,14 @@ request.send(null);
     <table align="center">
       <tr>
         <td><img src='/drop.png'/></td>
-        <td valign="center">Затоплення</td>
-        <td><span id="pool_txt"> 0</span></td>
+        <td valign="center">Затоплення (вікно)</td>
+        <td><span id="pool1_txt">0</span></td>
+      </tr>
+	  
+      <tr>
+        <td><img src='/drop.png'/></td>
+        <td valign="center">Затоплення (кран)</td>
+        <td><span id="pool2_txt">0</span></td>
       </tr>
 
       <tr>
