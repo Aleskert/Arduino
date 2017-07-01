@@ -20,26 +20,36 @@ bool pin1;
 bool pin2;
 bool pin3;
 bool pin4;
+bool button_pin1;
+bool button_pin2;
 void setup() {
-  pinMode(2, OUTPUT);		//2 пін під реле
-  pinMode(3, OUTPUT);		//3 пін під реле
-  pinMode(5, OUTPUT);		//5 пін під реле (4-ий пін під SD карту)
-  pinMode(6, OUTPUT);		//6 пін під реле
+  Serial.begin(9600);
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
+  pinMode(2, OUTPUT);    //2 пін під реле
+  pinMode(3, OUTPUT);   //3 пін під реле
+  pinMode(5, OUTPUT);   //5 пін під реле (4-ий пін під SD карту)
+  pinMode(6, OUTPUT);   //6 пін під реле
 
-  SD.begin(4);				//4 пін під SD карту
+  SD.begin(4);        //4 пін під SD карту
   dht.begin();
   Ethernet.begin(mac, ip);
   server.begin();
   pin1 = pin2 = pin3 = pin4 = 0;
+  button_pin1 = 0;
+  button_pin2 = 0;
 }
 
 void loop() {
-  int pool_pin1 = A0;						//пін першого датчика затоплення
-  int pool_pin2 = A1;						//пін другого датчика затоплення
-  int pool1 = analogRead(pool_pin1);		//читємо інфу з першого піну затоплення
-  int pool2 = analogRead(pool_pin2);		//читємо інфу з другого піну затоплення
-  int temp = dht.readTemperature();			//читаємо температуру з DHT22
-  int humidity = dht.readHumidity();		//читаємо вологість з DHT22
+  delay(1000);
+  int pool1 = 0;
+  int pool2 = 0;
+  pool1 = analogRead(0);    //читємо інфу з першого піну затоплення
+  pool2 = analogRead(1);    //читємо інфу з другого піну затоплення
+  Serial.print("A0: ");Serial.println(pool1);
+  Serial.print("A1: ");Serial.println(pool2);
+  int temp = dht.readTemperature();     //читаємо температуру з DHT22
+  int humidity = dht.readHumidity();    //читаємо вологість з DHT22
       
   EthernetClient client = server.available();
   if (client) {
@@ -98,8 +108,8 @@ void loop() {
             
             client.print(pool1);
             client.print(":");
-			client.print(pool2);
-			client.print(":");
+            client.print(pool2);
+            client.print(":");
             client.print(temp);
             client.print(":");
             client.print(humidity);
@@ -113,6 +123,7 @@ void loop() {
             client.print((digitalRead(6)) ? "1" : "0");
 
           } else if (StrContains(HTTP_req, "setpin?pin=1")) {
+			button_pin1 = !button_pin1;
             pin1 = !pin1;
             digitalWrite(2, pin1);
             client.println("HTTP/1.1 200 OK");
@@ -120,6 +131,7 @@ void loop() {
             client.println("Connnection: close");
             client.println();
           } else if (StrContains(HTTP_req, "setpin?pin=2")) {
+			button_pin2 = !button_pin2;
             pin2 = !pin2;
             digitalWrite(3, pin2);
             client.println("HTTP/1.1 200 OK");
@@ -141,21 +153,6 @@ void loop() {
             client.println("Connnection: close");
             client.println();
           }
-
-    if ((pool1 > 700) or (pool2 > 700)) {           //умова спрацювання реле1 при затопленні. Значення 700 від фонаря. 0 - 300 : сухо, 300 - 700 : влажно, 700 - 950 : в воде
-      pin1 = 1;
-      digitalWrite(2, pin1);
-    } else {
-      pin1 = 0;
-      digitalWrite(2, pin1);
-    }
-    if (humidity > 80) {              //умова спрацювання реле2 при високій вологості 80%
-      pin2 = 1;
-      digitalWrite(3, pin2);
-    } else {
-      pin2 = 0;
-      digitalWrite(3, pin2);
-    }
 
           if (webFile) {
             while (webFile.available()) {
@@ -181,6 +178,48 @@ void loop() {
     // close the connection:
     client.stop();
   }
+  
+    if (pool1 < 700 || pool2 < 700) {           //умова спрацювання реле1 при затопленні. 0 - 300 : вода, 300 - 700 : волого, 700 - 950 : сухо
+		if (button_pin1 == 1) {
+			pin1 = 0;
+			digitalWrite(2, pin1);
+			Serial.print("2 rele OFF!!!");
+		} else {
+			pin1 = 1;
+			digitalWrite(2, pin1);
+			Serial.print("2 rele ON!!!");			
+		}
+    } else {
+		if (button_pin1 == 1) {
+			pin1 = 1;
+			digitalWrite(2, pin1);
+			Serial.print("2 rele OFF!!!");
+		} else {
+			pin1 = 0;
+			digitalWrite(2, pin1);
+			Serial.print("2 rele ON!!!");			
+		}
+    }
+	
+    if (humidity > 80) {              //умова спрацювання реле2 при високій вологості 80%
+		if (button_pin2 == 1){
+			pin2 = 0;
+			digitalWrite(3, pin2);
+		} else {
+			pin2 = 1;
+			digitalWrite(3, pin2);
+			Serial.print("3 rele ON!!!");
+		}
+    } else {
+		if (button_pin2 == 1){
+			pin2 = 1;
+			digitalWrite(3, pin2);
+		} else {
+			pin2 = 0;
+			digitalWrite(3, pin2);
+			Serial.print("3 rele ON!!!");
+		}
+    }
 }
 
 void StrClear(char *str, char length)
