@@ -193,11 +193,11 @@ void loop() {
 		if (button_pin1 == 1) {
 			pin1 = 1;
 			digitalWrite(2, pin1);
-			Serial.print("2 rele OFF!!!");
+			Serial.print("2 rele ON!!!");
 		} else {
 			pin1 = 0;
 			digitalWrite(2, pin1);
-			Serial.print("2 rele ON!!!");			
+			Serial.print("2 rele OFF!!!");			
 		}
     }
 	
