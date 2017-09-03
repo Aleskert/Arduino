@@ -7,6 +7,7 @@
 
 #define DHTPIN 7          //датчик температури підключено до 7 піну
 #define DHTTYPE DHT22       //підключено датчик DHT22
+#define INTERVAL 90000  	//змінна інтервалу опитування датчиків
 DHT dht(DHTPIN, DHTTYPE);
 
 File webFile;
@@ -22,6 +23,8 @@ bool pin3;
 bool pin4;
 bool button_pin1;
 bool button_pin2;
+unsigned long waitTime = 0;		//статична змінна для збереження часу
+
 void setup() {
   Serial.begin(9600);
   pinMode(A0, INPUT);
@@ -44,10 +47,12 @@ void loop() {
   delay(1000);
   int pool1 = 0;
   int pool2 = 0;
-  pool1 = analogRead(0);    //читємо інфу з першого піну затоплення
-  pool2 = analogRead(1);    //читємо інфу з другого піну затоплення
-  Serial.print("A0: ");Serial.println(pool1);
-  Serial.print("A1: ");Serial.println(pool2);
+  if ((waitTime == 0 || millis() - waitTime > INTERVAL){
+	pool1 = analogRead(0);    //читємо інфу з першого піну затоплення
+	pool2 = analogRead(1);    //читємо інфу з другого піну затоплення
+	Serial.print("A0: ");Serial.println(pool1);
+	Serial.print("A1: ");Serial.println(pool2);
+  }
   int temp = dht.readTemperature();     //читаємо температуру з DHT22
   int humidity = dht.readHumidity();    //читаємо вологість з DHT22
       
@@ -179,7 +184,7 @@ void loop() {
     client.stop();
   }
   
-    if (pool1 < 700 || pool2 < 700) {           //умова спрацювання реле1 при затопленні. 0 - 300 : вода, 300 - 700 : волого, 700 - 950 : сухо
+    if (pool1 < 300 || pool2 < 300) {           //умова спрацювання реле1 при затопленні. 0 - 300 : вода, 300 - 700 : волого, 700 - 950 : сухо
     if (button_pin1 == 1) {
       pin1 = 0;
       digitalWrite(2, pin1);
