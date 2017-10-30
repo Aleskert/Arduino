@@ -7,7 +7,7 @@
 
 #define DHTPIN 7          //датчик температури підключено до 7 піну
 #define DHTTYPE DHT22       //підключено датчик DHT22
-#define INTERVAL 90000  	//змінна інтервалу опитування датчиків
+#define INTERVAL 10000    //змінна інтервалу опитування датчиків
 DHT dht(DHTPIN, DHTTYPE);
 
 File webFile;
@@ -21,9 +21,11 @@ bool pin1;
 bool pin2;
 bool pin3;
 bool pin4;
+int pool1;
+int pool2;
 bool button_pin1;
 bool button_pin2;
-unsigned long waitTime = 0;		//статична змінна для збереження часу
+unsigned long waitTime = 0;   //статична змінна для збереження часу
 
 void setup() {
   Serial.begin(9600);
@@ -38,20 +40,21 @@ void setup() {
   dht.begin();
   Ethernet.begin(mac, ip);
   server.begin();
-  pin1 = pin2 = pin3 = pin4 = 0;
-  button_pin1 = 0;
-  button_pin2 = 0;
+  pin1 = pin2 = pin3 = pin4 = 0;  //0 - кнопка червона, 1 - кнопка зелена
+  button_pin1 = 0;    //0 - реле вимкнено, 1 - включено
+  button_pin2 = 0;    //0 - реле вимкнено, 1 - включено
+  pool1 = 1023;
+  pool2 = 1023;
 }
 
 void loop() {
   delay(1000);
-  int pool1 = 0;
-  int pool2 = 0;
-  if ((waitTime == 0 || millis() - waitTime > INTERVAL){
-	pool1 = analogRead(0);    //читємо інфу з першого піну затоплення
-	pool2 = analogRead(1);    //читємо інфу з другого піну затоплення
-	Serial.print("A0: ");Serial.println(pool1);
-	Serial.print("A1: ");Serial.println(pool2);
+  if (waitTime == 0 || millis() - waitTime > INTERVAL){
+  pool1 = analogRead(0);    //читємо інфу з першого піну затоплення
+  pool2 = analogRead(1);    //читємо інфу з другого піну затоплення
+  Serial.print("A0: ");Serial.print(pool1);Serial.print(" ");
+  Serial.print("A1: ");Serial.print(pool2);Serial.print(" ");
+  waitTime = millis();
   }
   int temp = dht.readTemperature();     //читаємо температуру з DHT22
   int humidity = dht.readHumidity();    //читаємо вологість з DHT22
@@ -183,29 +186,29 @@ void loop() {
     // close the connection:
     client.stop();
   }
-  
-    if (pool1 < 300 || pool2 < 300) {           //умова спрацювання реле1 при затопленні. 0 - 300 : вода, 300 - 700 : волого, 700 - 950 : сухо
+
+  if (pool1 < 500 || pool2 < 500) {           //умова спрацювання реле1 при затопленні. 0 - 300 : вода, 300 - 700 : волого, 700 - 950 : сухо
     if (button_pin1 == 1) {
       pin1 = 0;
       digitalWrite(2, pin1);
-      Serial.print("2 rele OFF!!!");
+      Serial.print("2 rele OFF! ");
     } else {
       pin1 = 1;
       digitalWrite(2, pin1);
-      Serial.print("2 rele ON!!!");     
+      Serial.print("2 rele ON! ");     
     }
-    } else {
+  } else {
     if (button_pin1 == 1) {
       pin1 = 1;
       digitalWrite(2, pin1);
-      Serial.print("2 rele ON!!!");
+      Serial.print("2 rele ON! ");
     } else {
       pin1 = 0;
       digitalWrite(2, pin1);
-      Serial.print("2 rele OFF!!!");      
+      Serial.print("2 rele OFF! ");      
     }
-    }
-  
+  }
+
     if (humidity > 80) {              //умова спрацювання реле2 при високій вологості 80%
     if (button_pin2 == 1){
       pin2 = 0;
@@ -213,13 +216,13 @@ void loop() {
     } else {
       pin2 = 1;
       digitalWrite(3, pin2);
-      Serial.print("3 rele ON!!!");
+      Serial.println("3 rele ON");
     }
     } else {
     if (button_pin2 == 1){
       pin2 = 1;
       digitalWrite(3, pin2);
-      Serial.print("3 rele ON!!!");
+      Serial.println("3 rele ON");
     } else {
       pin2 = 0;
       digitalWrite(3, pin2);
