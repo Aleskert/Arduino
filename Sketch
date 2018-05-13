@@ -5,14 +5,16 @@
 #include <SD.h>
 #define REQ_BUF_SZ 20
 
-#define DHTPIN 7          //датчик температури підключено до 7 піну
-#define DHTTYPE DHT22       //підключено датчик DHT22
-#define INTERVAL 10000    //змінна інтервалу опитування датчиків
+#define DHTPIN 7                  //датчик температури підключено до 7 піну
+#define DHTTYPE DHT22             //підключено датчик DHT22
+#define INTERVAL 1000            //змінна інтервалу опитування датчиків
+#define hum_sens_vcc_1 8          //живлення першого датчика вологості
+#define hum_sens_vcc_2 9          //живлення другого датчика вологості
 DHT dht(DHTPIN, DHTTYPE);
 
 File webFile;
 char HTTP_req[REQ_BUF_SZ] = {0};  // buffered HTTP request stored as null terminated string
-char req_index = 0;         // index into HTTP_req buffer
+char req_index = 0;               // index into HTTP_req buffer
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 IPAddress ip(192, 168, 0, 177);
 
@@ -21,43 +23,54 @@ bool pin1;
 bool pin2;
 bool pin3;
 bool pin4;
-int pool1;
-int pool2;
 bool button_pin1;
 bool button_pin2;
-unsigned long waitTime = 0;   //статична змінна для збереження часу
+int pool1 = 1023;
+int pool2 = 1023;
+int humidity = 0;
+int temp = 0;
+unsigned long waitTime = 0;                 //статична змінна для збереження часу
 
 void setup() {
   Serial.begin(9600);
-  pinMode(A0, INPUT);
-  pinMode(A1, INPUT);
-  pinMode(2, OUTPUT);    //2 пін під реле крана
-  pinMode(3, OUTPUT);   //3 пін під реле високочастотніка
-  pinMode(5, OUTPUT);   //5 пін під реле вентилятора (4-ий пін під SD карту)
-  pinMode(6, OUTPUT);   //6 пін під реле
+  pinMode(A0, INPUT_PULLUP);                //перший датчик затоплення
+  pinMode(A1, INPUT_PULLUP);                //другий датчик затоплення
+  pinMode(2, OUTPUT);                       //2 пін під реле
+  pinMode(3, OUTPUT);                       //3 пін під реле
+  pinMode(5, OUTPUT);                       //5 пін під реле (4-ий пін під SD карту)
+  pinMode(6, OUTPUT);                       //6 пін під реле
 
-  SD.begin(4);        //4 пін під SD карту
+  SD.begin(4);                              //4 пін під SD карту
   dht.begin();
   Ethernet.begin(mac, ip);
   server.begin();
-  pin1 = pin2 = pin3 = pin4 = 0;  //0 - кнопка червона, 1 - кнопка зелена
-  button_pin1 = 0;    //0 - реле вимкнено, 1 - включено
-  button_pin2 = 0;    //0 - реле вимкнено, 1 - включено
-  pool1 = 1023;
-  pool2 = 1023;
+  pin1 = pin2 = pin3 = pin4 = 0;            //0 - кнопка червона, 1 - кнопка зелена
+  button_pin1 = 0;                          //0 - реле вимкнено, 1 - включено
+  button_pin2 = 0;                          //0 - реле вимкнено, 1 - включено
 }
 
 void loop() {
   delay(1000);
+  
   if (waitTime == 0 || millis() - waitTime > INTERVAL){
-  pool1 = analogRead(0);    //читємо інфу з першого піну затоплення
-  pool2 = analogRead(1);    //читємо інфу з другого піну затоплення
-  Serial.print("A0: ");Serial.print(pool1);Serial.print(" ");
-  Serial.print("A1: ");Serial.print(pool2);Serial.println(" ");
-  waitTime = millis();
+
+  digitalWrite(hum_sens_vcc_1, HIGH);       //живлення для першого датчика затоплення
+  delay(500);                               //затримка в 0.5 сек
+  pool1 = analogRead(0);                    //читємо інфу з першого піну затоплення
+  digitalWrite(hum_sens_vcc_1, LOW);        //вимикаємо живлення першого датчика
+
+  digitalWrite(hum_sens_vcc_1, HIGH);       //живлення для першого датчика затоплення
+  delay(500);                               //затримка в 0.5 сек  
+  pool2 = analogRead(1);                    //читємо інфу з другого піну затоплення
+  digitalWrite(hum_sens_vcc_1, LOW);        //вимикаємо живлення першого датчика
+  
+  temp = dht.readTemperature();             //читаємо температуру з DHT22
+  humidity = dht.readHumidity();            //читаємо вологість з DHT22
+  waitTime = millis();                      //прирівнюємо змінну очікування часу до поточного часу
+
+  Serial.print("A0: ");Serial.print(pool1);
+  Serial.print(" A1: ");Serial.println(pool2);  
   }
-  int temp = dht.readTemperature();     //читаємо температуру з DHT22
-  int humidity = dht.readHumidity();    //читаємо вологість з DHT22
       
   EthernetClient client = server.available();
   if (client) {
@@ -186,56 +199,46 @@ void loop() {
     // close the connection:
     client.stop();
   }
-
-  if (pool1 < 700 || pool2 < 700) {           //умова спрацювання реле1 при затопленні. 0 - 300 : вода, 300 - 700 : волого, 700 - 950 : сухо
+  
+  if (pool1 < 300 || pool2 < 300) {           //умова спрацювання реле1 при затопленні. 0 - 300 : вода, 300 - 700 : волого, 700 - 950 : сухо
     if (button_pin1 == 1) {
       pin1 = 0;
       digitalWrite(2, pin1);
-      Serial.print("2 rele OFF! ");
-	  delay(60000);
-	  digitalWrite(3, pin1);
-      Serial.println("3 rele OFF! ");
+      Serial.println("2 rele OFF!!!");
     } else {
       pin1 = 1;
       digitalWrite(2, pin1);
-      Serial.print("2 rele ON! ");
-      digitalWrite(3, pin1);
-      Serial.println("3 rele ON! ");	  
+      Serial.println("2 rele ON!!!");     
     }
   } else {
     if (button_pin1 == 1) {
       pin1 = 1;
       digitalWrite(2, pin1);
-      Serial.print("2 rele ON! ");
-      digitalWrite(3, pin1);
-      Serial.println("3 rele ON! ");	
+      Serial.println("2 rele ON!!!");
     } else {
       pin1 = 0;
       digitalWrite(2, pin1);
-      Serial.print("2 rele OFF! ");
-	  delay(60000);	  
-	  digitalWrite(3, pin1);
-      Serial.println("3 rele OFF! ");      
+      Serial.println("2 rele OFF!!!");      
     }
   }
 
     if (humidity > 80) {              //умова спрацювання реле2 при високій вологості 80%
     if (button_pin2 == 1){
       pin2 = 0;
-      digitalWrite(5, pin2);
+      digitalWrite(3, pin2);
     } else {
       pin2 = 1;
-      digitalWrite(5, pin2);
-      Serial.println("5 rele ON");
+      digitalWrite(3, pin2);
+      Serial.println("3 rele ON!!!");
     }
     } else {
     if (button_pin2 == 1){
       pin2 = 1;
-      digitalWrite(5, pin2);
-      Serial.println("5 rele ON");
+      digitalWrite(3, pin2);
+      Serial.println("3 rele ON!!!");
     } else {
       pin2 = 0;
-      digitalWrite(5, pin2);
+      digitalWrite(3, pin2);
     }
     }
 }
