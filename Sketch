@@ -7,7 +7,7 @@
 
 #define DHTPIN 7                  //датчик температури підключено до 7 піну
 #define DHTTYPE DHT22             //підключено датчик DHT22
-#define INTERVAL 1000            //змінна інтервалу опитування датчиків
+#define INTERVAL 1000             //змінна інтервалу опитування датчиків
 #define hum_sens_vcc_1 8          //живлення першого датчика вологості
 #define hum_sens_vcc_2 9          //живлення другого датчика вологості
 DHT dht(DHTPIN, DHTTYPE);
@@ -29,24 +29,24 @@ int pool1 = 1023;
 int pool2 = 1023;
 int humidity = 0;
 int temp = 0;
-unsigned long waitTime = 0;                 //статична змінна для збереження часу
+unsigned long waitTime = 0;       //статична змінна для збереження часу
 
 void setup() {
   Serial.begin(9600);
-  pinMode(A0, INPUT_PULLUP);                //перший датчик затоплення
-  pinMode(A1, INPUT_PULLUP);                //другий датчик затоплення
-  pinMode(2, OUTPUT);                       //2 пін під реле
-  pinMode(3, OUTPUT);                       //3 пін під реле
-  pinMode(5, OUTPUT);                       //5 пін під реле (4-ий пін під SD карту)
-  pinMode(6, OUTPUT);                       //6 пін під реле
+  pinMode(A0, INPUT_PULLUP);      //перший датчик затоплення
+  pinMode(A1, INPUT_PULLUP);      //другий датчик затоплення
+  pinMode(2, OUTPUT);             //2 пін під реле
+  pinMode(3, OUTPUT);             //3 пін під реле
+  pinMode(5, OUTPUT);             //5 пін під реле (4-ий пін під SD карту)
+  pinMode(6, OUTPUT);             //6 пін під реле
 
-  SD.begin(4);                              //4 пін під SD карту
+  SD.begin(4);                    //4 пін під SD карту
   dht.begin();
   Ethernet.begin(mac, ip);
   server.begin();
-  pin1 = pin2 = pin3 = pin4 = 0;            //0 - кнопка червона, 1 - кнопка зелена
-  button_pin1 = 0;                          //0 - реле вимкнено, 1 - включено
-  button_pin2 = 0;                          //0 - реле вимкнено, 1 - включено
+  pin1 = pin2 = pin3 = pin4 = 0;  //0 - кнопка червона, 1 - кнопка зелена
+  button_pin1 = 0;                //0 - реле вимкнено, 1 - включено
+  button_pin2 = 0;                //0 - реле вимкнено, 1 - включено
 }
 
 void loop() {
@@ -68,8 +68,10 @@ void loop() {
   humidity = dht.readHumidity();            //читаємо вологість з DHT22
   waitTime = millis();                      //прирівнюємо змінну очікування часу до поточного часу
 
-  Serial.print("A0: ");Serial.print(pool1);
-  Serial.print(" A1: ");Serial.println(pool2);  
+  Serial.print("A0: ");Serial.print(pool1);         //виводимо на монітор COM інформацію
+  Serial.print(" A1: ");Serial.println(pool2);
+  Serial.print("Temp: ");Serial.println(temp);
+  Serial.print("Hum: ");Serial.println(humidity);  
   }
       
   EthernetClient client = server.available();
@@ -81,7 +83,7 @@ void loop() {
       if (client.available()) {
         char c = client.read();
         if (req_index < (REQ_BUF_SZ - 1)) {
-          HTTP_req[req_index] = c; // save HTTP request character
+          HTTP_req[req_index] = c;            // save HTTP request character
           req_index++;
         }
         if (c == '\n' && currentLineIsBlank) {
